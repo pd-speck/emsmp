@@ -653,6 +653,18 @@
           <button id="resetDataBtn" class="secondary-btn">Clear Incident Data Only</button>
         </div>
       </div>
+
+      
+      <div class="collapsible-box" style="margin-top:10px">
+        <div class="collapsible-header" onclick="toggleCollapsible('customFilters')">
+          <span>⚡ Custom Filters</span>
+          <span class="collapse-icon" id="customFilters-icon">▼</span>
+        </div>
+        <div class="collapsible-content" id="customFilters-content" style="background: #b1ab8652;">
+          <button id="createCustomFilterBtn" class="primary-btn">+ Create Custom Filter</button>
+          <div id="customFiltersContainer"></div>
+        </div>
+      </div>
       
       <div class="collapsible-box">
         <div class="collapsible-header" onclick="toggleCollapsible('areas')">
@@ -693,17 +705,6 @@
               <div id="locationCheckboxList" class="location-checkbox-list"></div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="collapsible-box" style="margin-top:10px">
-        <div class="collapsible-header" onclick="toggleCollapsible('customFilters')">
-          <span>⚡ Custom Filters</span>
-          <span class="collapse-icon" id="customFilters-icon">▼</span>
-        </div>
-        <div class="collapsible-content" id="customFilters-content" style="background: #b1ab8652;">
-          <button id="createCustomFilterBtn" class="primary-btn">+ Create Custom Filter</button>
-          <div id="customFiltersContainer"></div>
         </div>
       </div>
 
