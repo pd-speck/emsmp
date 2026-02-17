@@ -642,6 +642,19 @@
       </div>
 
       <div class="collapsible-box">
+        <div class="collapsible-header" onclick="toggleCollapsible('incidents')">
+          <span>📊 Incident Data</span>
+          <span class="collapse-icon" id="incidents-icon">▼</span>
+        </div>
+        <div class="collapsible-content" id="incidents-content" style="background: #b1ab8652;">
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+          <div class="small-note" style="margin-top:6px; font-style: italic;">Upload a .CSV file. Include a column
+            titled 'location' for location matching. Include "timeElapsed" column for Distance/Time analysis.</div>
+          <button id="resetDataBtn" class="secondary-btn">Clear Incident Data Only</button>
+        </div>
+      </div>
+      
+      <div class="collapsible-box">
         <div class="collapsible-header" onclick="toggleCollapsible('areas')">
           <span>📐 Area Selection</span>
           <span class="collapse-icon" id="areas-icon">▼</span>
@@ -680,19 +693,6 @@
               <div id="locationCheckboxList" class="location-checkbox-list"></div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="collapsible-box">
-        <div class="collapsible-header" onclick="toggleCollapsible('incidents')">
-          <span>📊 Incident Data</span>
-          <span class="collapse-icon" id="incidents-icon">▼</span>
-        </div>
-        <div class="collapsible-content" id="incidents-content" style="background: #b1ab8652;">
-          <input id="csvFile" type="file" accept=".csv,text/csv" />
-          <div class="small-note" style="margin-top:6px; font-style: italic;">Upload a .CSV file. Include a column
-            titled 'location' for location matching. Include "timeElapsed" column for Distance/Time analysis.</div>
-          <button id="resetDataBtn" class="secondary-btn">Clear Incident Data Only</button>
         </div>
       </div>
 
