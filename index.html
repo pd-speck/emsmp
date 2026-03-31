@@ -2903,7 +2903,25 @@
       const mode = document.querySelector('input[name="heatmapMode"]:checked').value;
 
       if (!csvRows || csvRows.length === 0) { el.innerText = 'No CSV loaded'; return; }
-
+      // Total Counts line at the top
+          const hasActiveFilters =
+            Object.values(activeFilters).some(s => s.size > 0) ||
+            customFilters.some(f => f.activeRanges.size > 0);
+      let totalCountLine = '';
+        if (hasActiveFilters) {
+          const filteredTotal = csvRows.filter(row => {
+            for (const colName of filterableColumns) {
+              const filterSet = activeFilters[colName];
+              if (filterSet && filterSet.size > 0 && !filterSet.has(row[colName])) return false;
+            }
+            if (!applyCustomFilters(row)) return false;
+            return true;
+          }).length;
+          totalCountLine = `Filtered Incidents: ${filteredTotal} of ${csvRows.length} filtered\n\n`;
+        } else {
+          totalCountLine = `Total Incidents: ${csvRows.length}\n\n`;
+        }
+      
       if (mode === 'distance' && distanceDataCalculated[routingMode] && distanceCache[routingMode]) {
         // Sort polygons by efficiency ratio
         const ratioEntries = Object.entries(distanceCache[routingMode])
@@ -2931,7 +2949,7 @@
       const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
       const lines   = entries.slice(0, 3).map(e => `${e[0]}: ${e[1]}`);
       const more    = entries.length > 3 ? `\n+ ${entries.length - 3} more...` : '';
-      el.innerText  = `Top Incident Locations:\n${lines.join('\n')}${more}`;
+      el.innerText  = totalCountLine + `Top Incident Locations:\n${lines.join('\n')}${more}`;
     }
 
     // Area/category details popup
