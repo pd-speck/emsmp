@@ -598,7 +598,7 @@
           <button class="mode-btn active" data-statstype="counts" style="margin-top:1px; font-size:11px;">Incident Volume</button>
           <button class="mode-btn" data-statstype="efficiency" style="margin-top:1px; font-size:11px;">Efficiency</button>
         </div>
-        <div id="statsEfficiencyNote" class="small-note" style="display:none; margin-top:4px;">Requires <strong>timeElapsed</strong> column. Tests each group's mean response time against the overall population mean (one-sample Z/T-test, Bonferroni-corrected).</div>
+        <div id="statsEfficiencyNote" class="small-note" style="display:none; margin-top:4px;">Requires <strong>timeElapsed</strong> column. Runs a one-sample Z/T-test per group vs. population mean (Bonferroni-corrected).</div>
 
         <hr class="section-divider">
 
@@ -606,7 +606,7 @@
         <div class="stats-axis-box">
           <div class="stats-axis-label">
             Compare
-            <span class="stats-axis-badge">Axis 1: "Rows"</span>
+            <span class="stats-axis-badge">Rows</span>
           </div>
           <div style="margin-bottom:4px;">
             <label style="font-size:11px; font-weight:600; color:var(--dark-bg);">Source</label>
@@ -637,12 +637,12 @@
         <div class="stats-axis-box" id="statsAxis2Box">
           <div class="stats-axis-label">
             Split by
-            <span class="stats-axis-badge">Axis 2: "Columns"</span>
+            <span class="stats-axis-badge">Columns</span>
           </div>
           <div style="margin-bottom:4px;">
             <label style="font-size:11px; font-weight:600; color:var(--dark-bg);">Source</label>
             <select id="axis2Source" class="stats-axis-select" style="margin-top:3px;">
-              <option value="none">None (Will Run Goodness-of-Fit)</option>
+              <option value="none">None (Goodness-of-Fit)</option>
               <option value="locations">Locations / Areas</option>
             </select>
           </div>
@@ -663,7 +663,7 @@
               <button onclick="axisSelectNone(2)" class="secondary-btn" style="margin-top:0; font-size:10px; padding:4px;">None</button>
             </div>
           </div>
-          <div id="axis2NoneNote" class="small-note" style="margin-top:4px;">Axis 1 (Rows) will be tested against an equal expected distribution.</div>
+          <div id="axis2NoneNote" class="small-note" style="margin-top:4px;">Tests rows against equal expected distribution.</div>
         </div>
 
         <hr class="section-divider">
@@ -677,7 +677,7 @@
             </span>
           </div>
           <div class="sub-collapsible-body" id="analysis-groups-body">
-            <p style="font-size:13px; color:#C3D898; margin-bottom:10px;">Combine filters into custom groups for analysis (e.g. If you have rows for day of the week and shift designation and wish to compare the distributions of incidents or efficiency between Friday D-Shift, Saturday D-Shift, and Sunday D-shift). Custom groups appear as Axis 1 items.</p>
+            <p style="font-size:13px; color:#C3D898; margin-bottom:10px;">Combine filter conditions into named groups (e.g. "Fri D-Shift"). Groups appear as rows.</p>
             <button id="addAnalysisGroupBtn" class="secondary-btn" style="margin-top:0;">+ Add Group</button>
             <button id="generateCombosBtn" class="secondary-btn" style="margin-top:6px;">⚡ Auto-Generate Combinations</button>
             <button id="clearAnalysisGroupsBtn" class="danger-btn" style="margin-top:6px;">Delete All Groups</button>
@@ -686,14 +686,9 @@
         </div>
 
         <hr class="section-divider">
-
-        <p class="section-label">Test Name <span style="font-weight:400; text-transform:none; font-size:11px; color:#9ca3af;">(optional)</span></p>
-        <input type="text" id="statsReportTitle" placeholder="e.g., Spring 2026 Incident Location Distribution" style="width:100%; padding:6px 8px; border:1px solid var(--secondary-bg); border-radius:5px; font-size:12px; box-sizing:border-box; color:var(--dark-bg); margin-top:2px;" />
-
-        <hr class="section-divider">
-
         <div id="statsResultContainer" style="margin-top:4px;"></div>
-        <button id="statsDownloadBtn" class="secondary-btn" style="display:none; margin-top:8px;">⬇ Download PDF Report</button>
+
+
       </div>
     <div style="background:#1C3144; border-top:2px solid #7EA16B; padding:10px 12px; flex-shrink:0;" id="statsRunFooter" style="display:none;">
       <button id="statsRunBtn" class="primary-btn" style="margin-top:0;">Run Analysis</button>
@@ -2973,8 +2968,7 @@
 
   function runStatsAnalysis() {
     const resultContainer = document.getElementById('statsResultContainer');
-    const downloadBtn = document.getElementById('statsDownloadBtn');
-    resultContainer.innerHTML = ''; downloadBtn.style.display = 'none'; _lastStatsResult = null;
+    resultContainer.innerHTML = ''; _lastStatsResult = null;
     if (csvRows.length === 0) { resultContainer.innerHTML = '<div class="stats-warning">Please upload a CSV file first.</div>'; return; }
 
     const axis1Items = getCheckedAxisItems(1);
@@ -2984,7 +2978,7 @@
 
     // Efficiency: one-sample Z/T test for each group vs overall population mean
     if (statsAnalysisType === 'efficiency') {
-      runBaselineTest(axis1Items, baseRows, resultContainer, downloadBtn);
+      runBaselineTest(axis1Items, baseRows, resultContainer);
       return;
     }
 
@@ -2993,9 +2987,9 @@
     if (axis2Source !== 'none' && axis2Items.length < 2) { resultContainer.innerHTML = '<div class="stats-warning">Please select at least 2 items on Axis 2 (columns), or set Axis 2 to None for a 1D test.</div>'; return; }
 
     if (axis2Source === 'none') {
-      run1DChiSquare(axis1Items, baseRows, resultContainer, downloadBtn);
+      run1DChiSquare(axis1Items, baseRows, resultContainer);
     } else {
-      run2DChiSquare(axis1Items, axis2Items, baseRows, resultContainer, downloadBtn);
+      run2DChiSquare(axis1Items, axis2Items, baseRows, resultContainer);
     }
   }
 
@@ -3040,7 +3034,7 @@
   }
 
   // 1D goodness-of-fit: are axis1 items equally distributed?
-  function run1DChiSquare(axis1Items, baseRows, resultContainer, downloadBtn) {
+  function run1DChiSquare(axis1Items, baseRows, resultContainer) {
 
     const observed = axis1Items.map(item => getRowsForAxisItem(1, item, baseRows).length);
     const total = observed.reduce((s, v) => s + v, 0);
@@ -3058,20 +3052,19 @@
     _lastStatsResult = {
       mode: '1d',
       type: statsAnalysisType,
-      title: document.getElementById('statsReportTitle').value.trim() || 'Chi-Square: Incident Distribution',
+      title: '',
       axis1Label: getAxisLabel(1), axis2Label: null,
       axis1Items, axis2Items: [],
       observed, expected, contributions, stdResiduals, chiSq: stat, df, pValue, sig, lowCells,
       filterSummary: buildFilterSummaryText(), total, testName
     };
     renderStatsResult(resultContainer);
-    downloadBtn.style.display = 'block';
   }
 
   // 2D contingency: rows = axis1, columns = axis2
   // For "counts": cell[i][j] = # rows matching axis1[i] AND axis2[j]
   // For "efficiency": cell[i][j] = # rows in axis1[i] that fall in response time bin j (axis2 items define time bins via their row sets)
-  function run2DChiSquare(axis1Items, axis2Items, baseRows, resultContainer, downloadBtn) {
+  function run2DChiSquare(axis1Items, axis2Items, baseRows, resultContainer) {
     // Build observed matrix
     let observed;
     const axis2Labels = axis2Items;
@@ -3106,14 +3099,13 @@
     _lastStatsResult = {
       mode: '2d',
       type: statsAnalysisType,
-      title: document.getElementById('statsReportTitle').value.trim() || 'Chi-Square: Contingency Analysis',
+      title: '',
       axis1Label: getAxisLabel(1), axis2Label: getAxisLabel(2),
       axis1Items, axis2Items: axis2Labels,
       observed, expected, contributions, stdResiduals, chiSq: stat, df, pValue, sig, lowCells,
       filterSummary: buildFilterSummaryText(), grandTotal, rowTotals, colTotals, timeBinNote, testName
     };
     renderStatsResult(resultContainer);
-    downloadBtn.style.display = 'block';
   }
 
   function renderStatsResult(container) {
@@ -3121,44 +3113,85 @@
     container.innerHTML = '';
     const box = document.createElement('div'); box.className = 'stats-result-box';
 
-    const title = document.createElement('div'); title.className = 'stats-result-title';
-    const testLabel = r.testName || (r.mode === '1d' ? 'Chi-Square Goodness-of-Fit' : 'Chi-Square Test of Independence');
-    title.textContent = testLabel;
-    box.appendChild(title);
+    // ── Citation/summary block (shown first) ──
+    const testLabel2 = r.testName || (r.mode === '1d' ? 'Chi-Square Goodness-of-Fit' : 'Chi-Square Test of Independence');
+    const reportTitle = '';
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const filterLine = r.filterSummary !== 'None' ? `<div><strong>Filters:</strong> ${r.filterSummary}</div>` : '';
+    let conclusion;
+    if (r.mode === '1d') {
+      conclusion = r.pValue < 0.05
+        ? `Incidents are <strong>not uniformly distributed</strong> across ${r.axis1Label}.`
+        : `Distribution is <strong>consistent with uniform</strong> across ${r.axis1Label}.`;
+    } else {
+      conclusion = r.pValue < 0.05
+        ? `<strong>Significant association</strong> between ${r.axis1Label} and ${r.axis2Label}.`
+        : `<strong>No significant association</strong> between ${r.axis1Label} and ${r.axis2Label}.`;
+    }
+    const cite = document.createElement('div');
+    cite.style.cssText = 'background:rgba(195,216,152,0.07); border:1px solid rgba(126,161,107,0.45); border-radius:7px; padding:10px 13px; font-size:11px; color:#C3D898; line-height:1.75; margin-bottom:10px;';
+    cite.innerHTML = `
+      <div style="font-weight:700; font-size:12px; color:#7EA16B; border-bottom:1px solid rgba(126,161,107,0.3); padding-bottom:5px; margin-bottom:7px;">${reportTitle || 'Statistical Result'}</div>
+      <div><strong>Test:</strong> ${testLabel2}</div>
+      <div><strong>Metric:</strong> ${r.type === 'counts' ? 'Incident Volume' : 'Response Efficiency'}</div>
+      <div><strong>${r.axis1Label}:</strong> ${r.axis1Items.join(', ')}</div>
+      ${r.mode === '2d' ? `<div><strong>${r.axis2Label}:</strong> ${r.axis2Items.join(', ')}</div>` : ''}
+      <div><strong>N =</strong> ${r.mode === '1d' ? r.total : r.grandTotal}</div>
+      ${filterLine}
+      <div style="margin-top:7px; padding-top:7px; border-top:1px solid rgba(126,161,107,0.3);">
+        <strong>χ²(${r.df}) = ${r.chiSq.toFixed(3)}, p = ${formatPValue(r.pValue)}</strong>
+        &nbsp;<span class="stats-sig-badge ${r.sig.cls}" style="font-size:10px; padding:2px 8px;">${r.sig.label}</span>
+      </div>
+      <div style="margin-top:4px;">${conclusion}</div>
+      <div style="margin-top:5px; color:#596F62; font-size:10px;">Generated ${dateStr} · EMS Mapping Project</div>
+    `;
+    box.appendChild(cite);
 
-    const statsRows = [
-      ['Chi-Square (χ²)', r.chiSq.toFixed(4)],
-      ['Degrees of Freedom', r.df],
-      ['p-value', formatPValue(r.pValue)],
-      r.mode === '1d' ? ['Total Incidents', r.total] : ['Total Records', r.grandTotal],
-    ];
-    statsRows.forEach(([label, value]) => {
-      const row = document.createElement('div'); row.className = 'stats-result-row';
-      row.innerHTML = `<span class="stats-result-label">${label}</span><span class="stats-result-value">${value}</span>`;
-      box.appendChild(row);
-    });
-
-    const badge = document.createElement('div'); badge.className = `stats-sig-badge ${r.sig.cls}`; badge.textContent = r.sig.label;
-    box.appendChild(badge);
-
+    // ── Warnings ──
     if (r.lowCells > 0) {
       const warn = document.createElement('div'); warn.className = 'stats-warning';
       const isFisher = r.testName && r.testName.includes('Fisher');
       warn.textContent = isFisher
-        ? `⚠ ${r.lowCells} cell(s) have expected count < 5 — Fisher's Exact Test was used instead.`
-        : `⚠ ${r.lowCells} cell(s) have expected count < 5. Results may be unreliable.`;
+        ? `⚠ ${r.lowCells} cell(s) expected count < 5 — Fisher's Exact used.`
+        : `⚠ ${r.lowCells} cell(s) expected count < 5. Results may be unreliable.`;
       box.appendChild(warn);
     }
 
-    if (r.timeBinNote) {
-      const note = document.createElement('div'); note.className = 'stats-warning'; note.style.background = '#f0f9ff'; note.style.borderColor = '#bae6fd'; note.style.color = '#0369a1';
-      note.textContent = r.timeBinNote; box.appendChild(note);
-    }
+    // ── Collapsible full results ──
+    const collapseWrap = document.createElement('div');
+    collapseWrap.style.cssText = 'border:1px solid rgba(126,161,107,0.3); border-radius:6px; overflow:hidden; margin-top:6px;';
+
+    const collapseHeader = document.createElement('div');
+    collapseHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:rgba(89,111,98,0.22); cursor:pointer; font-size:12px; font-weight:600; color:#C3D898; user-select:none;';
+    collapseHeader.innerHTML = '<span>Full Results Table</span><span id="fullResultsArrow">▶</span>';
+
+    const collapseBody = document.createElement('div');
+    collapseBody.style.cssText = 'display:none; padding:10px; background:rgba(0,0,0,0.12);';
+
+    collapseHeader.addEventListener('click', () => {
+      const open = collapseBody.style.display !== 'none';
+      collapseBody.style.display = open ? 'none' : 'block';
+      collapseHeader.querySelector('#fullResultsArrow').textContent = open ? '▶' : '▼';
+    });
+
+    // Key stats rows
+    const statsRows = [
+      ['Test', testLabel2],
+      ['χ²', r.chiSq.toFixed(4)],
+      ['df', r.df],
+      ['p-value', formatPValue(r.pValue)],
+      ['N', r.mode === '1d' ? r.total : r.grandTotal],
+    ];
+    statsRows.forEach(([label, value]) => {
+      const row = document.createElement('div'); row.className = 'stats-result-row';
+      row.innerHTML = `<span class="stats-result-label">${label}</span><span class="stats-result-value">${value}</span>`;
+      collapseBody.appendChild(row);
+    });
 
     const tableTitle = document.createElement('div');
-    tableTitle.style.cssText = 'font-weight:600; font-size:12px; color:#F5F0DC; margin-top:12px; margin-bottom:4px;';
-    tableTitle.textContent = r.mode === '1d' ? 'Observed vs Expected' : `Observed Counts: ${r.axis1Label} × ${r.axis2Label}`;
-    box.appendChild(tableTitle);
+    tableTitle.style.cssText = 'font-weight:600; font-size:11px; color:#7EA16B; margin-top:10px; margin-bottom:4px;';
+    tableTitle.textContent = r.mode === '1d' ? 'Observed vs Expected' : `${r.axis1Label} × ${r.axis2Label}`;
+    collapseBody.appendChild(tableTitle);
 
     const thStyle = 'cursor:pointer; user-select:none; white-space:nowrap;';
     const sortIndicator = (col, sortState) => sortState.col === col ? (sortState.dir === 1 ? ' ▲' : ' ▼') : ' ⇅';
@@ -3169,19 +3202,12 @@
     if (r.mode === '1d') {
       const sortState = { col: null, dir: 1 };
       const cols = [
-        { key: 'name',     label: r.axis1Label,        numeric: false },
-        { key: 'obs',      label: 'Observed',           numeric: true  },
-        { key: 'exp',      label: 'Expected',           numeric: true  },
-        { key: 'stdresid', label: 'Std. Residual',      numeric: true  },
+        { key: 'name',     label: r.axis1Label,   numeric: false },
+        { key: 'obs',      label: 'Observed',      numeric: true  },
+        { key: 'exp',      label: 'Expected',      numeric: true  },
+        { key: 'stdresid', label: 'Std. Residual', numeric: true  },
       ];
-
-      let rowData = r.axis1Items.map((item, i) => ({
-        name: item,
-        obs: r.observed[i],
-        exp: r.expected[i],
-        stdresid: r.stdResiduals[i],
-      }));
-
+      let rowData = r.axis1Items.map((item, i) => ({ name: item, obs: r.observed[i], exp: r.expected[i], stdresid: r.stdResiduals[i] }));
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
       cols.forEach(col => {
@@ -3189,50 +3215,30 @@
         th.textContent = col.label + sortIndicator(col.key, sortState);
         th.addEventListener('click', () => {
           if (sortState.col === col.key) sortState.dir *= -1; else { sortState.col = col.key; sortState.dir = 1; }
-          rowData.sort((a, b) => {
-            const av = a[col.key], bv = b[col.key];
-            return col.numeric ? (av - bv) * sortState.dir : String(av).localeCompare(String(bv)) * sortState.dir;
-          });
+          rowData.sort((a, b) => col.numeric ? (a[col.key] - b[col.key]) * sortState.dir : String(a[col.key]).localeCompare(String(b[col.key])) * sortState.dir);
           cols.forEach((c, ci) => { headerRow.children[ci].textContent = c.label + sortIndicator(c.key, sortState); headerRow.children[ci].style.cssText = thStyle; });
           rebuildTbody();
         });
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow); table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      table.appendChild(tbody);
-
+      const tbody = document.createElement('tbody'); table.appendChild(tbody);
       const rebuildTbody = () => {
         tbody.innerHTML = '';
         rowData.forEach(row => {
           const tr = document.createElement('tr');
-          const resid = row.stdresid;
-          const residColor = resid > 2 ? '#4ade80' : resid < -2 ? '#f87171' : '#C8CA8A';
-          tr.innerHTML = `<td>${row.name}</td><td>${row.obs}</td><td>${row.exp.toFixed(2)}</td><td style="color:${residColor}; font-weight:${Math.abs(resid)>2?'700':'400'}">${resid.toFixed(4)}</td>`;
+          const residColor = row.stdresid > 2 ? '#4ade80' : row.stdresid < -2 ? '#f87171' : '#C8CA8A';
+          tr.innerHTML = `<td>${row.name}</td><td>${row.obs}</td><td>${row.exp.toFixed(2)}</td><td style="color:${residColor}; font-weight:${Math.abs(row.stdresid)>2?'700':'400'}">${row.stdresid.toFixed(4)}</td>`;
           tbody.appendChild(tr);
         });
       };
       rebuildTbody();
-
     } else {
-      // 2D table — sort by row name or any data column
       const sortState = { col: null, dir: 1 };
-
-      // Build flat row data: one entry per axis1 item
-      let rowData = r.axis1Items.map((item, i) => ({
-        name: item,
-        obs: r.observed[i],
-        stdresid: r.stdResiduals[i],
-        total: r.rowTotals[i],
-      }));
-
+      let rowData = r.axis1Items.map((item, i) => ({ name: item, obs: r.observed[i], stdresid: r.stdResiduals[i], total: r.rowTotals[i] }));
       const colKeys = r.axis2Items.map((_, j) => `col_${j}`);
-
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
-
-      // Row label header
       const thName = document.createElement('th'); thName.style.cssText = thStyle;
       thName.textContent = r.axis1Label.substring(0, 22) + sortIndicator('name', sortState);
       thName.addEventListener('click', () => {
@@ -3241,8 +3247,6 @@
         refreshHeaders(); rebuildTbody2d();
       });
       headerRow.appendChild(thName);
-
-      // Data column headers
       r.axis2Items.forEach((colLabel, j) => {
         const th = document.createElement('th'); th.style.cssText = thStyle;
         const key = colKeys[j];
@@ -3254,8 +3258,6 @@
         });
         headerRow.appendChild(th);
       });
-
-      // Total header
       const thTotal = document.createElement('th'); thTotal.style.cssText = thStyle;
       thTotal.textContent = 'Total' + sortIndicator('total', sortState);
       thTotal.addEventListener('click', () => {
@@ -3265,22 +3267,12 @@
       });
       headerRow.appendChild(thTotal);
       thead.appendChild(headerRow); table.appendChild(thead);
-
       const refreshHeaders = () => {
-        thName.textContent = r.axis1Label.substring(0, 22) + sortIndicator('name', sortState);
-        thName.style.cssText = thStyle;
-        r.axis2Items.forEach((colLabel, j) => {
-          const th = headerRow.children[j + 1];
-          th.textContent = (colLabel.length > 10 ? colLabel.substring(0, 10) + '…' : colLabel) + sortIndicator(colKeys[j], sortState);
-          th.style.cssText = thStyle;
-        });
-        thTotal.textContent = 'Total' + sortIndicator('total', sortState);
-        thTotal.style.cssText = thStyle;
+        thName.textContent = r.axis1Label.substring(0, 22) + sortIndicator('name', sortState); thName.style.cssText = thStyle;
+        r.axis2Items.forEach((colLabel, j) => { const th = headerRow.children[j+1]; th.textContent = (colLabel.length > 10 ? colLabel.substring(0,10)+'…' : colLabel) + sortIndicator(colKeys[j], sortState); th.style.cssText = thStyle; });
+        thTotal.textContent = 'Total' + sortIndicator('total', sortState); thTotal.style.cssText = thStyle;
       };
-
-      const tbody = document.createElement('tbody');
-      table.appendChild(tbody);
-
+      const tbody = document.createElement('tbody'); table.appendChild(tbody);
       const rebuildTbody2d = () => {
         tbody.innerHTML = '';
         rowData.forEach(row => {
@@ -3294,7 +3286,6 @@
           cells += `<td><strong>${row.total}</strong></td>`;
           tr.innerHTML = cells; tbody.appendChild(tr);
         });
-        // Column totals row always stays at bottom, unsorted
         const totalsRow = document.createElement('tr');
         totalsRow.innerHTML = `<td><strong>Total</strong></td>` + r.colTotals.map(v => `<td><strong>${v}</strong></td>`).join('') + `<td><strong>${r.grandTotal}</strong></td>`;
         tbody.appendChild(totalsRow);
@@ -3302,26 +3293,18 @@
       rebuildTbody2d();
     }
 
-    wrapper.appendChild(table); box.appendChild(wrapper);
+    wrapper.appendChild(table); collapseBody.appendChild(wrapper);
 
-    // Interpretation
-    const interp = document.createElement('div');
-    interp.style.cssText = 'margin-top:10px; font-size:11px; color:#4b5563; line-height:1.5; border-top:1px solid #e5e7eb; padding-top:8px;';
-    if (r.mode === '1d') {
-      interp.textContent = r.pValue < 0.05
-        ? `Significant difference in distribution across ${r.axis1Label} (χ²=${r.chiSq.toFixed(3)}, df=${r.df}, p=${formatPValue(r.pValue)}). Incidents are not uniformly distributed.`
-        : `No significant difference detected (χ²=${r.chiSq.toFixed(3)}, df=${r.df}, p=${formatPValue(r.pValue)}). Distribution is consistent with uniform across ${r.axis1Label}.`;
-    } else {
-      interp.textContent = r.pValue < 0.05
-        ? `Significant association between ${r.axis1Label} and ${r.axis2Label} (χ²=${r.chiSq.toFixed(3)}, df=${r.df}, p=${formatPValue(r.pValue)}). The distribution differs across groups.`
-        : `No significant association detected between ${r.axis1Label} and ${r.axis2Label} (χ²=${r.chiSq.toFixed(3)}, df=${r.df}, p=${formatPValue(r.pValue)}). Distributions are similar across groups.`;
-    }
-    box.appendChild(interp);
+    const residLegend = document.createElement('div');
+    residLegend.style.cssText = 'margin-top:6px; font-size:10px; color:#9ca3af; display:flex; gap:12px; flex-wrap:wrap;';
+    residLegend.innerHTML = '<span style="color:#4ade80;">■ Residual > +2 (over)</span><span style="color:#f87171;">■ Residual < −2 (under)</span>';
+    collapseBody.appendChild(residLegend);
+
+    collapseWrap.appendChild(collapseHeader);
+    collapseWrap.appendChild(collapseBody);
+    box.appendChild(collapseWrap);
     container.appendChild(box);
   }
-
-  // PDF export
-  document.getElementById('statsDownloadBtn').addEventListener('click', downloadStatsPDF);
 
   function downloadStatsPDF() {
     const r = _lastStatsResult; if (!r) return;
@@ -3506,7 +3489,7 @@
     return front * f;
   }
 
-  function runBaselineTest(axis1Items, baseRows, resultContainer, downloadBtn) {
+  function runBaselineTest(axis1Items, baseRows, resultContainer) {
     if (!csvColumns.includes('timeElapsed')) {
       resultContainer.innerHTML = '<div class="stats-warning">The CSV must include a "timeElapsed" column for Efficiency analysis.</div>';
       return;
@@ -3583,7 +3566,7 @@
 
     _lastStatsResult = {
       mode: 'baseline', type: 'efficiency',
-      title: document.getElementById('statsReportTitle').value.trim() || 'Efficiency: Distance/Time Ratio vs. Population Mean',
+      title: '',
       axis1Label: getAxisLabel(1), axis1Items,
       overallMean, overallSD, overallN,
       groupResults, validGroups, skippedGroups: groupResults.filter(g => g.n === 0),
@@ -3591,7 +3574,6 @@
       efficiencyUnits: 'mi/min'
     };
     renderBaselineResult(resultContainer);
-    downloadBtn.style.display = 'block';
   }
 
   function renderBaselineResult(container) {
@@ -3608,7 +3590,7 @@
     baselineBox.innerHTML = `
       <div style="font-weight:700; color:#C8CA8A; margin-bottom:4px;">Population Baseline (all filtered incidents)</div>
       <div style="color:#E3DCC2;">N = ${r.overallN} &nbsp;|&nbsp; Mean = ${r.overallMean.toFixed(4)} mi/min &nbsp;|&nbsp; SD = ${r.overallSD.toFixed(4)} mi/min</div>
-      <div style="color:#9ca3af; font-size:11px; margin-top:3px;">Bonferroni correction applied across ${r.bonferroni} group${r.bonferroni !== 1 ? 's' : ''}.</div>
+      <div style="color:#9ca3af; font-size:11px; margin-top:3px;">Bonferroni-corrected · ${r.bonferroni} group${r.bonferroni !== 1 ? 's' : ''}.</div>
     `;
     box.appendChild(baselineBox);
 
@@ -3879,6 +3861,7 @@
       mapEl.style.left = newW + 'px';
       mapEl.style.width = (window.innerWidth - newW) + 'px';
       map.invalidateSize();
+      repositionFloatingPanels();
     }
     function stopDrag() {
       resizer.classList.remove('dragging');
@@ -3886,6 +3869,18 @@
       document.removeEventListener('mouseup', stopDrag);
     }
   })();
+
+  function repositionFloatingPanels() {
+    const sidebarW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w')) || 375;
+    const vm = document.getElementById('mapFloatingControls');
+    const filt = document.getElementById('filtersFloatingBox');
+    const leg = document.getElementById('legendFloatingBox');
+    const tb = document.getElementById('floatingToolbar');
+    if (vm && vm.style.display !== 'none') { vm.style.left = (sidebarW + 12) + 'px'; }
+    if (filt && filt.style.display !== 'none') { filt.style.left = (sidebarW + 12) + 'px'; }
+    if (tb) { tb.style.left = (sidebarW + 50) + 'px'; }
+    if (leg) { const tbRect = tb ? tb.getBoundingClientRect() : null; if (tbRect) { leg.style.left = (tbRect.right + 8) + 'px'; } }
+  }
 
   // Init
   loadCsvFromLocalStorage();
