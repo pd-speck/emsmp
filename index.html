@@ -598,7 +598,7 @@
           <button class="mode-btn active" data-statstype="counts" style="margin-top:1px; font-size:11px;">Incident Volume</button>
           <button class="mode-btn" data-statstype="efficiency" style="margin-top:1px; font-size:11px;">Efficiency</button>
         </div>
-        <div id="statsEfficiencyNote" class="small-note" style="display:none; margin-top:4px;">Requires <strong>timeElapsed</strong> column. Runs a one-sample Z/T-test per group vs. population mean (Bonferroni-corrected).</div>
+        <div id="statsEfficiencyNote" class="small-note" style="display:none; margin-top:4px;">Requires <strong>timeElapsed</strong> column. Will run a one-sample Z/T-test per group vs. population mean (Bonferroni-corrected).</div>
 
         <hr class="section-divider">
 
@@ -3122,7 +3122,7 @@
     if (r.mode === '1d') {
       conclusion = r.pValue < 0.05
         ? `Incidents are <strong>not uniformly distributed</strong> across ${r.axis1Label}.`
-        : `Distribution is <strong>consistent with uniform</strong> across ${r.axis1Label}.`;
+        : `Distribution is <strong>consistent with a uniform distribution </strong> across ${r.axis1Label}. Any observed deviance is likely due to random chance.`;
     } else {
       conclusion = r.pValue < 0.05
         ? `<strong>Significant association</strong> between ${r.axis1Label} and ${r.axis2Label}.`
@@ -3594,6 +3594,20 @@
     `;
     box.appendChild(baselineBox);
 
+    // ── Interpretation now sits right after the stats, before the table ──
+    const sigFaster = r.validGroups.filter(g => g.adjustedP < 0.05 && g.direction === 'faster');
+    const sigSlower = r.validGroups.filter(g => g.adjustedP < 0.05 && g.direction === 'slower');
+    const interp = document.createElement('div');
+    interp.style.cssText = 'margin-bottom:10px; font-size:11px; color:#C8CA8A; line-height:1.6;';
+    let interpText = `Overall mean efficiency: ${r.overallMean.toFixed(4)} mi/min (N=${r.overallN}). `;
+    if (sigFaster.length === 0 && sigSlower.length === 0) interpText += 'No groups were found to differ significantly from the population baseline.';
+    else {
+      if (sigFaster.length > 0) interpText += `Significantly faster: ${sigFaster.map(g => g.name + ' (' + g.mean.toFixed(2) + ' min)').join(', ')}. `;
+      if (sigSlower.length > 0) interpText += `Significantly slower: ${sigSlower.map(g => g.name + ' (' + g.mean.toFixed(2) + ' min)').join(', ')}.`;
+    }
+    interp.textContent = interpText;
+    box.appendChild(interp);
+
     const wrapper = document.createElement('div'); wrapper.className = 'stats-table-wrapper';
     const table = document.createElement('table'); table.className = 'stats-table';
     const thead = document.createElement('thead');
@@ -3617,18 +3631,6 @@
     });
     table.appendChild(tbody); wrapper.appendChild(table); box.appendChild(wrapper);
 
-    const sigFaster = r.validGroups.filter(g => g.adjustedP < 0.05 && g.direction === 'faster');
-    const sigSlower = r.validGroups.filter(g => g.adjustedP < 0.05 && g.direction === 'slower');
-    const interp = document.createElement('div');
-    interp.style.cssText = 'margin-top:10px; font-size:11px; color:#C8CA8A; line-height:1.6; border-top:1px solid rgba(200,202,138,0.3); padding-top:8px;';
-    let interpText = `Overall mean efficiency: ${r.overallMean.toFixed(4)} mi/min (N=${r.overallN}). `;
-    if (sigFaster.length === 0 && sigSlower.length === 0) interpText += 'No groups differed significantly from the population baseline after Bonferroni correction.';
-    else {
-      if (sigFaster.length > 0) interpText += `Significantly faster: ${sigFaster.map(g => g.name + ' (' + g.mean.toFixed(2) + ' min)').join(', ')}. `;
-      if (sigSlower.length > 0) interpText += `Significantly slower: ${sigSlower.map(g => g.name + ' (' + g.mean.toFixed(2) + ' min)').join(', ')}.`;
-    }
-    interp.textContent = interpText;
-    box.appendChild(interp);
     container.appendChild(box);
   }
 
